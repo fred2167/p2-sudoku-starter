@@ -6,8 +6,88 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct {
+  int** grid;
+  int row;
+  int col;
+  int size;
+
+}Param;
+
+void* createParam(int** grid, int row, int col, int size){
+    Param* param = malloc(sizeof(Param));
+    param->grid = grid;
+    param->row = row;
+    param->col = col;
+    param->size = size;
+    return (void*) param;
+}
+
+
+void* checkRow(void* param){
+  Param* data = (Param*) param;
+  int** grid = data->grid;
+  int row = data->row;
+  int size = data->size;
+
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size+1];
+  for (int i = 1; i <=size; i++){
+    counter[i] = 0;
+  }
+
+  // check number is 0, otherwise increment counter
+  for (int c = 1; c <= size; c++){
+    int number = grid[row][c] ;
+    if (number == 0){
+      return (void*) false;
+    }
+    counter[number] += 1;
+  }
+
+  // check if all counter equal 1
+  for (int i = 1; i <= size; i++){
+    if (counter[i] != 1){
+      return (void*) false; // 0
+    }
+  }
+  return (void*) true; // 1
+
+}
+
+void* checkColum(void* param){
+  Param* data = (Param*) param;
+  int** grid = data->grid;
+  int col = data->col;
+  int size = data->size;
+
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size+1];
+  for (int i = 1; i <=size; i++){
+    counter[i] = 0;
+  }
+
+  // check number is 0, otherwise increment counter
+  for (int r = 1; r <= size; r++){
+    int number = grid[r][col] ;
+    if (number == 0){
+      return (void*) false;
+    }
+    counter[number] += 1;
+  }
+
+  // check if all counter equal 1
+  for (int i = 1; i <= size; i++){
+    if (counter[i] != 1){
+      return (void*) false; // 0
+    }
+  }
+  return (void*) true; // 1
+
+}
+
 // takes puzzle size and grid[][] representing sudoku puzzle
-// and tow booleans to be assigned: complete and valid.
+// and two booleans to be assigned: complete and valid.
 // row-0 and column-0 is ignored for convenience, so a 9x9 puzzle
 // has grid[1][1] as the top-left element and grid[9]9] as bottom right
 // A puzzle is complete if it can be completed with no 0s in it
@@ -15,8 +95,17 @@
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
-  *valid = true;
-  *complete = true;
+
+  for (int i = 1; i <= psize; i++){
+    void* rowData = createParam(grid, i, 1, psize);
+    void* colData = createParam(grid, 1, i, psize);
+    void* rowFlag = checkRow(rowData);
+    void* colFlag = checkColum(colData);
+    printf("Row validation flag: %d\n", (bool) rowFlag);
+    printf("Col validation flag: %d\n", (bool) colFlag);
+    free(rowData);
+    free(colData);
+  }
 }
 
 // takes filename and pointer to grid[][]
