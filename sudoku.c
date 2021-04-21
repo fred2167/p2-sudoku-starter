@@ -12,6 +12,8 @@ typedef struct {
   int row;
   int col;
   int size;
+  bool complete;
+  bool valid;
 
 } Param;
 
@@ -21,10 +23,12 @@ void *createParam(int **grid, int row, int col, int size) {
   param->row = row;
   param->col = col;
   param->size = size;
+  param->complete = false;
+  param->valid = false;
   return (void *)param;
 }
 
-void *checkRow(void *param) {
+void checkRow(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
@@ -40,21 +44,24 @@ void *checkRow(void *param) {
   for (int c = 1; c <= size; c++) {
     int number = grid[row][c];
     if (number == 0) {
-      return (void *)false;
+      data->complete = false;
+      return;
     }
     counter[number] += 1;
   }
+  data->complete = true;
 
   // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
-      return (void *)false; // 0
+      data->valid = false;
+      return;
     }
   }
-  return (void *)true; // 1
+  data->valid = true;
 }
 
-void *checkColum(void *param) {
+void checkColum(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int col = data->col;
@@ -66,24 +73,26 @@ void *checkColum(void *param) {
     counter[i] = 0;
   }
 
-  // check number is 0, otherwise increment counter
   for (int r = 1; r <= size; r++) {
     int number = grid[r][col];
     if (number == 0) {
-      return (void *)false;
+      data->complete = false;
+      return;
     }
     counter[number] += 1;
   }
+    data->complete = true;
 
   // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
-      return (void *)false; // 0
+      data->valid = false;
+      return;
     }
   }
-  return (void *)true; // 1
+  data->valid = true;
 }
-void *checkSquare(void *param) {
+void checkBox(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
@@ -96,26 +105,30 @@ void *checkSquare(void *param) {
     counter[i] = 0;
   }
 
-  // check number is 0, otherwise increment counter
   int interval = (int)sqrt(size);
   for (int r = row; r < row + interval; r++) {
     for (int c = col; c < col + interval; c++) {
       int number = grid[r][c];
 
       if (number == 0) {
-        return (void *)false;
+      data->complete = false;
+      return;
       }
+
       counter[number] += 1;
     }
   }
 
+  data->complete = true;
+
   // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
-      return (void *)false; // 0
+      data->valid = false;
+      return;
     }
   }
-  return (void *)true; // 1
+  data->valid = true;
 }
 
 // takes puzzle size and grid[][] representing sudoku puzzle
@@ -127,38 +140,52 @@ void *checkSquare(void *param) {
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
+  
+  
+  
+  
   int interval = (int)sqrt(psize);
   for (int i = 1; i <= psize; i++) {
     void *rowData = createParam(grid, i, 1, psize);
     void *colData = createParam(grid, 1, i, psize);
-    void *rowFlag = checkRow(rowData);
-    void *colFlag = checkColum(colData);
-    // printf("Row validation flag: %d\n", (bool) rowFlag);
-    // printf("Col validation flag: %d\n", (bool) colFlag);
 
-    free(rowData);
-    free(colData);
+    checkRow(rowData);
+    checkColum(colData);
+
+    Param* rowParamPtr = (Param*) rowData;
+    Param* colParamPtr = (Param*) colData;
 
     if (i % interval == 1) {
 
       for (int j = 1; j < psize; j += interval) {
-        void *squareData = createParam(grid, i, j, psize);
-        void *squareFlag = checkSquare(squareData);
-        if (!squareFlag) {
-          *complete = false;
+        void *boxData = createParam(grid, i, j, psize);
+
+        checkBox(boxData);
+
+        Param* boxParamPtr = (Param*) boxData;
+
+        *valid = boxParamPtr->valid;
+        *complete = boxParamPtr->complete;
+       
+        free(boxData);
+
+        if (!*complete || !*valid){
           return;
         }
-
-        free(squareData);
       }
     }
 
-    if (!rowFlag || !colFlag) {
-      *complete = false;
+    *complete = (rowParamPtr->complete && colParamPtr->complete);
+    *valid = (rowParamPtr->valid && colParamPtr->valid);
+    
+    free(rowData);
+    free(colData);
+
+    if (!*complete || !*valid){
       return;
     }
   }
-  *complete = true;
+  
 }
 
 // takes filename and pointer to grid[][]
