@@ -28,7 +28,7 @@ void *createParam(int **grid, int row, int col, int size) {
   return (void *)param;
 }
 
-void checkRow(void *param) {
+void* checkRow(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
@@ -45,7 +45,7 @@ void checkRow(void *param) {
     int number = grid[row][c];
     if (number == 0) {
       data->complete = false;
-      return;
+      return NULL;
     }
     counter[number] += 1;
   }
@@ -55,13 +55,14 @@ void checkRow(void *param) {
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
       data->valid = false;
-      return;
+      return NULL;
     }
   }
   data->valid = true;
+  return NULL;
 }
 
-void checkColum(void *param) {
+void* checkColum(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int col = data->col;
@@ -77,7 +78,7 @@ void checkColum(void *param) {
     int number = grid[r][col];
     if (number == 0) {
       data->complete = false;
-      return;
+      return NULL;
     }
     counter[number] += 1;
   }
@@ -87,12 +88,13 @@ void checkColum(void *param) {
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
       data->valid = false;
-      return;
+      return NULL;
     }
   }
   data->valid = true;
+  return NULL;
 }
-void checkBox(void *param) {
+void* checkBox(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
@@ -112,7 +114,7 @@ void checkBox(void *param) {
 
       if (number == 0) {
       data->complete = false;
-      return;
+      return NULL;
       }
 
       counter[number] += 1;
@@ -125,10 +127,11 @@ void checkBox(void *param) {
   for (int i = 1; i <= size; i++) {
     if (counter[i] != 1) {
       data->valid = false;
-      return;
+      return NULL;
     }
   }
   data->valid = true;
+  return NULL;
 }
 
 // takes puzzle size and grid[][] representing sudoku puzzle
@@ -141,7 +144,7 @@ void checkBox(void *param) {
 void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
   
-  
+  pthread_attr_t attr;
   
   
   int interval = (int)sqrt(psize);
@@ -149,18 +152,28 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
     void *rowData = createParam(grid, i, 1, psize);
     void *colData = createParam(grid, 1, i, psize);
 
-    checkRow(rowData);
-    checkColum(colData);
+    pthread_attr_init(&attr);
+    pthread_t rowTid;
+    pthread_t colTid;
 
-    Param* rowParamPtr = (Param*) rowData;
-    Param* colParamPtr = (Param*) colData;
+    pthread_create(&rowTid, &attr, checkRow, rowData);
+    pthread_create(&colTid, &attr, checkColum, colData);
+
+    // checkRow(rowData);
+    // checkColum(colData);
+
 
     if (i % interval == 1) {
 
       for (int j = 1; j < psize; j += interval) {
         void *boxData = createParam(grid, i, j, psize);
 
-        checkBox(boxData);
+        pthread_t boxTid;
+        pthread_create(&boxTid, &attr, checkBox, boxData);
+
+        // checkBox(boxData);
+
+        pthread_join(boxTid, NULL);
 
         Param* boxParamPtr = (Param*) boxData;
 
@@ -174,6 +187,12 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
         }
       }
     }
+
+    pthread_join(rowTid, NULL);
+    pthread_join(colTid, NULL);
+
+    Param* rowParamPtr = (Param*) rowData;
+    Param* colParamPtr = (Param*) colData;
 
     *complete = (rowParamPtr->complete && colParamPtr->complete);
     *valid = (rowParamPtr->valid && colParamPtr->valid);
