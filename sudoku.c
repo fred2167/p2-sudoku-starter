@@ -27,32 +27,32 @@ void *createParam(int **grid, int row, int col, int size) {
   return (void *)param;
 }
 
-void* checkRow(void *param) {
+void *checkRow(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
   int size = data->size;
 
-  // tidCounter arrays for each number, also ignore idx 0 for convenience
-  int tidCounter[size + 1];
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
   for (int i = 1; i <= size; i++) {
-    tidCounter[i] = 0;
+    counter[i] = 0;
   }
 
-  // check number is 0, otherwise increment tidCounter
+  // check number is 0, otherwise increment counter
   for (int c = 1; c <= size; c++) {
     int number = grid[row][c];
     if (number == 0) {
       data->complete = false;
       return NULL;
     }
-    tidCounter[number] += 1;
+    counter[number] += 1;
   }
   data->complete = true;
 
-  // check if all tidCounter equal 1
+  // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
-    if (tidCounter[i] != 1) {
+    if (counter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -61,16 +61,16 @@ void* checkRow(void *param) {
   return NULL;
 }
 
-void* checkColum(void *param) {
+void *checkColum(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int col = data->col;
   int size = data->size;
 
-  // tidCounter arrays for each number, also ignore idx 0 for convenience
-  int tidCounter[size + 1];
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
   for (int i = 1; i <= size; i++) {
-    tidCounter[i] = 0;
+    counter[i] = 0;
   }
 
   for (int r = 1; r <= size; r++) {
@@ -79,13 +79,13 @@ void* checkColum(void *param) {
       data->complete = false;
       return NULL;
     }
-    tidCounter[number] += 1;
+    counter[number] += 1;
   }
-    data->complete = true;
+  data->complete = true;
 
-  // check if all tidCounter equal 1
+  // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
-    if (tidCounter[i] != 1) {
+    if (counter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -93,17 +93,17 @@ void* checkColum(void *param) {
   data->valid = true;
   return NULL;
 }
-void* checkBox(void *param) {
+void *checkBox(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
   int row = data->row;
   int col = data->col;
   int size = data->size;
 
-  // tidCounter arrays for each number, also ignore idx 0 for convenience
-  int tidCounter[size + 1];
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
   for (int i = 1; i <= size; i++) {
-    tidCounter[i] = 0;
+    counter[i] = 0;
   }
 
   int interval = (int)sqrt(size);
@@ -112,19 +112,19 @@ void* checkBox(void *param) {
       int number = grid[r][c];
 
       if (number == 0) {
-      data->complete = false;
-      return NULL;
+        data->complete = false;
+        return NULL;
       }
 
-      tidCounter[number] += 1;
+      counter[number] += 1;
     }
   }
 
   data->complete = true;
 
-  // check if all tidCounter equal 1
+  // check if all counter equal 1
   for (int i = 1; i <= size; i++) {
-    if (tidCounter[i] != 1) {
+    if (counter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -142,17 +142,16 @@ void* checkBox(void *param) {
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
-  
-  int arrSize = psize*3;
 
   pthread_attr_t attr;
 
+  int arrSize = psize * 3;
   pthread_t tids[arrSize];
-  void* datas[arrSize];
+  void *datas[arrSize];
 
   int tidCount = 0;
   int dataCount = 0;
-  
+
   int interval = (int)sqrt(psize);
 
   for (int i = 1; i <= psize; i++) {
@@ -170,7 +169,6 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
     // checkRow(rowData);
     // checkColum(colData);
 
-
     if (i % interval == 1) {
 
       for (int j = 1; j < psize; j += interval) {
@@ -187,10 +185,10 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
 
   bool completes[arrSize];
   bool valids[arrSize];
-  for (int i = 0; i < tidCount; i++){
+  for (int i = 0; i < tidCount; i++) {
     pthread_join(tids[i], NULL);
 
-    Param* paramPtr = (Param*) datas[i];
+    Param *paramPtr = (Param *)datas[i];
 
     completes[i] = paramPtr->complete;
     valids[i] = paramPtr->valid;
@@ -198,15 +196,14 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
     free(datas[i]);
   }
 
-   for (int i = 0; i < tidCount; i++){
-     *complete = completes[i];
-     *valid = valids[i];
+  for (int i = 0; i < tidCount; i++) {
+    *complete = completes[i];
+    *valid = valids[i];
 
-     if (!*complete || !*valid){
-       return;
-     }
-   }
-  
+    if (!*complete || !*valid) {
+      return;
+    }
+  }
 }
 
 // takes filename and pointer to grid[][]
