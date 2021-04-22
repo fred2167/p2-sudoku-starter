@@ -9,11 +9,10 @@
 
 typedef struct {
   int **grid;
-  int row;
-  int col;
-  int size;
-  bool complete;
-  bool valid;
+  int row, col, size;
+  bool complete, valid;
+
+  int fill;
 } Param;
 
 void *createParam(int **grid, int row, int col, int size) {
@@ -24,7 +23,135 @@ void *createParam(int **grid, int row, int col, int size) {
   param->size = size;
   param->complete = false;
   param->valid = false;
+
+  param->fill = -1;
   return (void *)param;
+}
+
+void *fillRow(void *param) {
+  Param *data = (Param *)param;
+  int **grid = data->grid;
+  int row = data->row;
+  int size = data->size;
+
+  int x, y;
+
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
+  for (int i = 1; i <= size; i++) {
+    counter[i] = 0;
+  }
+
+  for (int c = 1; c <= size; c++) {
+    int number = grid[row][c];
+    if (number == 0) {
+      x = c;
+      y = row;
+      continue;
+    }
+    counter[number] += 1;
+  }
+
+  int zeroCount = 0;
+  int fillNum = 0;
+  for (int i = 1; i <= size; i++) {
+    if (counter[i] == 0) {
+      zeroCount++;
+      fillNum = i;
+    }
+  }
+
+  if (zeroCount == 1) {
+    data->fill = fillNum;
+    grid[y][x] = fillNum;
+
+    printf("Row: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+  }
+  return NULL;
+}
+void *fillCol(void *param) {
+  Param *data = (Param *)param;
+  int **grid = data->grid;
+  int col = data->col;
+  int size = data->size;
+
+  int x, y;
+
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
+  for (int i = 1; i <= size; i++) {
+    counter[i] = 0;
+  }
+
+  for (int r = 1; r <= size; r++) {
+    int number = grid[r][col];
+    if (number == 0) {
+      x = col;
+      y = r;
+      continue;
+    }
+    counter[number] += 1;
+  }
+
+  int zeroCount = 0;
+  int fillNum = 0;
+  for (int i = 1; i <= size; i++) {
+    if (counter[i] == 0) {
+      zeroCount++;
+      fillNum = i;
+    }
+  }
+
+  if (zeroCount == 1) {
+    data->fill = fillNum;
+    grid[y][x] = fillNum;
+    printf("Colum: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+  }
+  return NULL;
+}
+void *fillBox(void *param) {
+  Param *data = (Param *)param;
+  int **grid = data->grid;
+  int row = data->row;
+  int col = data->col;
+  int size = data->size;
+
+  int x, y;
+
+  // counter arrays for each number, also ignore idx 0 for convenience
+  int counter[size + 1];
+  for (int i = 1; i <= size; i++) {
+    counter[i] = 0;
+  }
+
+  int interval = (int)sqrt(size);
+  for (int r = row; r < row + interval; r++) {
+    for (int c = col; c < col + interval; c++) {
+      int number = grid[r][c];
+      if (number == 0) {
+        x = c;
+        y = r;
+        continue;
+      }
+      counter[number] += 1;
+    }
+  }
+
+  int zeroCount = 0;
+  int fillNum = 0;
+  for (int i = 1; i <= size; i++) {
+    if (counter[i] == 0) {
+      zeroCount++;
+      fillNum = i;
+    }
+  }
+
+  if (zeroCount == 1) {
+    data->fill = fillNum;
+    grid[y][x] = fillNum;
+    printf("BOX: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+  }
+  return NULL;
 }
 
 void *checkRow(void *param) {
@@ -60,7 +187,6 @@ void *checkRow(void *param) {
   data->valid = true;
   return NULL;
 }
-
 void *checkColum(void *param) {
   Param *data = (Param *)param;
   int **grid = data->grid;
@@ -133,6 +259,66 @@ void *checkBox(void *param) {
   return NULL;
 }
 
+void fillPuzzle(int psize, int **grid) {
+
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+
+  int arrSize = 100;
+  pthread_t tids[arrSize];
+  int tidCount = 0;
+
+  void *datas[arrSize];
+  int dataCount = 0;
+
+  bool masterFlag = false;
+
+  int interval = (int)sqrt(psize);
+  do {
+    tidCount = 0;
+    dataCount = 0;
+
+    for (int i = 1; i <= psize; i++) {
+      void *rowData = createParam(grid, i, 1, psize);
+      void *colData = createParam(grid, 1, i, psize);
+
+      datas[dataCount++] = rowData;
+      datas[dataCount++] = colData;
+
+      pthread_create(&tids[tidCount++], &attr, fillRow, rowData);
+      pthread_create(&tids[tidCount++], &attr, fillCol, colData);
+
+      // flags[flagCount++] = fillRow(rowData);
+      // flags[flagCount++] = fillCol(colData);
+
+      if (i % interval == 1) {
+
+        for (int j = 1; j < psize; j += interval) {
+          void *boxData = createParam(grid, i, j, psize);
+
+          datas[dataCount++] = boxData;
+
+          pthread_create(&tids[tidCount++], &attr, fillBox, boxData);
+
+          // flags[flagCount++] = fillBox(boxData);
+        }
+      }
+    } // end outer for
+
+    masterFlag = false;
+    for (int i = 0; i < tidCount; i++) {
+
+      pthread_join(tids[i], NULL);
+
+      Param *paramPtr = (Param *)datas[i];
+      if (paramPtr->fill != -1) {
+        masterFlag = true;
+      }
+      free(datas[i]);
+    }
+  } while (masterFlag);
+}
+
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and two booleans to be assigned: complete and valid.
 // row-0 and column-0 is ignored for convenience, so a 9x9 puzzle
@@ -144,6 +330,7 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
 
   pthread_attr_t attr;
+  pthread_attr_init(&attr);
 
   int arrSize = psize * 3;
   pthread_t tids[arrSize];
@@ -160,8 +347,6 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
 
     datas[dataCount++] = rowData;
     datas[dataCount++] = colData;
-
-    pthread_attr_init(&attr);
 
     pthread_create(&tids[tidCount++], &attr, checkRow, rowData);
     pthread_create(&tids[tidCount++], &attr, checkColum, colData);
@@ -268,6 +453,8 @@ int main(int argc, char **argv) {
   if (complete) {
     printf("Valid puzzle? ");
     printf(valid ? "true\n" : "false\n");
+  } else {
+    fillPuzzle(sudokuSize, grid);
   }
   printSudokuPuzzle(sudokuSize, grid);
   deleteSudokuPuzzle(sudokuSize, grid);
