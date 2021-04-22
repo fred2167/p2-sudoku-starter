@@ -34,26 +34,26 @@ void* checkRow(void *param) {
   int row = data->row;
   int size = data->size;
 
-  // counter arrays for each number, also ignore idx 0 for convenience
-  int counter[size + 1];
+  // tidCounter arrays for each number, also ignore idx 0 for convenience
+  int tidCounter[size + 1];
   for (int i = 1; i <= size; i++) {
-    counter[i] = 0;
+    tidCounter[i] = 0;
   }
 
-  // check number is 0, otherwise increment counter
+  // check number is 0, otherwise increment tidCounter
   for (int c = 1; c <= size; c++) {
     int number = grid[row][c];
     if (number == 0) {
       data->complete = false;
       return NULL;
     }
-    counter[number] += 1;
+    tidCounter[number] += 1;
   }
   data->complete = true;
 
-  // check if all counter equal 1
+  // check if all tidCounter equal 1
   for (int i = 1; i <= size; i++) {
-    if (counter[i] != 1) {
+    if (tidCounter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -68,10 +68,10 @@ void* checkColum(void *param) {
   int col = data->col;
   int size = data->size;
 
-  // counter arrays for each number, also ignore idx 0 for convenience
-  int counter[size + 1];
+  // tidCounter arrays for each number, also ignore idx 0 for convenience
+  int tidCounter[size + 1];
   for (int i = 1; i <= size; i++) {
-    counter[i] = 0;
+    tidCounter[i] = 0;
   }
 
   for (int r = 1; r <= size; r++) {
@@ -80,13 +80,13 @@ void* checkColum(void *param) {
       data->complete = false;
       return NULL;
     }
-    counter[number] += 1;
+    tidCounter[number] += 1;
   }
     data->complete = true;
 
-  // check if all counter equal 1
+  // check if all tidCounter equal 1
   for (int i = 1; i <= size; i++) {
-    if (counter[i] != 1) {
+    if (tidCounter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -101,10 +101,10 @@ void* checkBox(void *param) {
   int col = data->col;
   int size = data->size;
 
-  // counter arrays for each number, also ignore idx 0 for convenience
-  int counter[size + 1];
+  // tidCounter arrays for each number, also ignore idx 0 for convenience
+  int tidCounter[size + 1];
   for (int i = 1; i <= size; i++) {
-    counter[i] = 0;
+    tidCounter[i] = 0;
   }
 
   int interval = (int)sqrt(size);
@@ -117,15 +117,15 @@ void* checkBox(void *param) {
       return NULL;
       }
 
-      counter[number] += 1;
+      tidCounter[number] += 1;
     }
   }
 
   data->complete = true;
 
-  // check if all counter equal 1
+  // check if all tidCounter equal 1
   for (int i = 1; i <= size; i++) {
-    if (counter[i] != 1) {
+    if (tidCounter[i] != 1) {
       data->valid = false;
       return NULL;
     }
@@ -145,19 +145,26 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
   
   pthread_attr_t attr;
-  
+
+  pthread_t tids[100];
+  void* datas[100];
+
+  int tidCount = 0;
+  int dataCount = 0;
   
   int interval = (int)sqrt(psize);
+
   for (int i = 1; i <= psize; i++) {
     void *rowData = createParam(grid, i, 1, psize);
     void *colData = createParam(grid, 1, i, psize);
 
-    pthread_attr_init(&attr);
-    pthread_t rowTid;
-    pthread_t colTid;
+    datas[dataCount++] = rowData;
+    datas[dataCount++] = colData;
 
-    pthread_create(&rowTid, &attr, checkRow, rowData);
-    pthread_create(&colTid, &attr, checkColum, colData);
+    pthread_attr_init(&attr);
+
+    pthread_create(&tids[tidCount++], &attr, checkRow, rowData);
+    pthread_create(&tids[tidCount++], &attr, checkColum, colData);
 
     // checkRow(rowData);
     // checkColum(colData);
@@ -168,42 +175,36 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
       for (int j = 1; j < psize; j += interval) {
         void *boxData = createParam(grid, i, j, psize);
 
-        pthread_t boxTid;
-        pthread_create(&boxTid, &attr, checkBox, boxData);
+        datas[dataCount++] = boxData;
+
+        pthread_create(&tids[tidCount++], &attr, checkBox, boxData);
 
         // checkBox(boxData);
-
-        pthread_join(boxTid, NULL);
-
-        Param* boxParamPtr = (Param*) boxData;
-
-        *valid = boxParamPtr->valid;
-        *complete = boxParamPtr->complete;
-       
-        free(boxData);
-
-        if (!*complete || !*valid){
-          return;
-        }
       }
     }
-
-    pthread_join(rowTid, NULL);
-    pthread_join(colTid, NULL);
-
-    Param* rowParamPtr = (Param*) rowData;
-    Param* colParamPtr = (Param*) colData;
-
-    *complete = (rowParamPtr->complete && colParamPtr->complete);
-    *valid = (rowParamPtr->valid && colParamPtr->valid);
-    
-    free(rowData);
-    free(colData);
-
-    if (!*complete || !*valid){
-      return;
-    }
   }
+
+  bool completes[100];
+  bool valids[100];
+  for (int i = 0; i < tidCount; i++){
+    pthread_join(tids[i], NULL);
+
+    Param* paramPtr = (Param*) datas[i];
+
+    completes[i] = paramPtr->complete;
+    valids[i] = paramPtr->valid;
+
+    free(datas[i]);
+  }
+
+   for (int i = 0; i < tidCount; i++){
+     *complete = completes[i];
+     *valid = valids[i];
+
+     if (!*complete || !*valid){
+       return;
+     }
+   }
   
 }
 
