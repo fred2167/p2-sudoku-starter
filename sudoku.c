@@ -14,7 +14,6 @@ typedef struct {
   int size;
   bool complete;
   bool valid;
-
 } Param;
 
 void *createParam(int **grid, int row, int col, int size) {
@@ -144,10 +143,12 @@ void* checkBox(void *param) {
 void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
   // YOUR CODE GOES HERE and in HELPER FUNCTIONS
   
+  int arrSize = psize*3;
+
   pthread_attr_t attr;
 
-  pthread_t tids[100];
-  void* datas[100];
+  pthread_t tids[arrSize];
+  void* datas[arrSize];
 
   int tidCount = 0;
   int dataCount = 0;
@@ -184,8 +185,8 @@ void checkPuzzle(int psize, int **grid, bool *valid, bool *complete) {
     }
   }
 
-  bool completes[100];
-  bool valids[100];
+  bool completes[arrSize];
+  bool valids[arrSize];
   for (int i = 0; i < tidCount; i++){
     pthread_join(tids[i], NULL);
 
