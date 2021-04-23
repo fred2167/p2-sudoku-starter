@@ -4,6 +4,10 @@
 rm -f sudoku a.out
 gcc -Wall -Wextra -pthread sudoku.c -o sudoku -lm
 ./sudoku puzzle9-valid.txt
+./sudoku puzzle2-valid.txt
+./sudoku puzzle2-invalid.txt
+./sudoku puzzle2-fill-valid.txt
+./sudoku puzzle2-fill-difficult.txt
 
 # to check for memory leaks, use
 # valgrind ./sudoku puzzle9-good.txt

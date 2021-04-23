@@ -2,6 +2,7 @@ checkPuzzle:
     Using one thread for one row, one thread for one colum, and one thread for one box
     check completness and validate in a single pass
     total of using size * 3 threads to check completness and validate a sudoku
+    join all threads at the end and store flags in an array to be checked later.
     
 
 fillPuzzle:
