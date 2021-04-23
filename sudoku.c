@@ -65,7 +65,7 @@ void *fillRow(void *param) {
     data->fill = fillNum;
     grid[y][x] = fillNum;
 
-    printf("Row: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+    printf("grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
   }
   return NULL;
 }
@@ -105,7 +105,7 @@ void *fillCol(void *param) {
   if (zeroCount == 1) {
     data->fill = fillNum;
     grid[y][x] = fillNum;
-    printf("Colum: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+    printf("grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
   }
   return NULL;
 }
@@ -149,7 +149,7 @@ void *fillBox(void *param) {
   if (zeroCount == 1) {
     data->fill = fillNum;
     grid[y][x] = fillNum;
-    printf("BOX: grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
+    printf("grid[%d][%d] replaced with %d\n", y, x, grid[y][x]);
   }
   return NULL;
 }
@@ -288,8 +288,8 @@ void fillPuzzle(int psize, int **grid) {
       pthread_create(&tids[tidCount++], &attr, fillRow, rowData);
       pthread_create(&tids[tidCount++], &attr, fillCol, colData);
 
-      // flags[flagCount++] = fillRow(rowData);
-      // flags[flagCount++] = fillCol(colData);
+      // fillRow(rowData);
+      // fillCol(colData);
 
       if (i % interval == 1) {
 
@@ -300,7 +300,7 @@ void fillPuzzle(int psize, int **grid) {
 
           pthread_create(&tids[tidCount++], &attr, fillBox, boxData);
 
-          // flags[flagCount++] = fillBox(boxData);
+          // fillBox(boxData);
         }
       }
     } // end outer for
@@ -310,6 +310,8 @@ void fillPuzzle(int psize, int **grid) {
 
       pthread_join(tids[i], NULL);
 
+      // check if fill is changed (i.e have at least one fill successfull)
+      // Otherwise, terminate while loop
       Param *paramPtr = (Param *)datas[i];
       if (paramPtr->fill != -1) {
         masterFlag = true;
