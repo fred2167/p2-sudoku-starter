@@ -1,0 +1,13 @@
+checkPuzzle:
+    Using one thread for one row, one thread for one colum, and one thread for one box
+    check completness and validate in a single pass
+    total of using size * 3 threads to check completness and validate a sudoku
+    
+
+fillPuzzle:
+    Only fill puzzle after checkPuzzle completeness flag return false in main
+    fill a simple sudoku with *one* missing number at a time
+    fill rows, colums, and boxes in a single pass using toatl of size * 3 threads.
+    threads are joined after each pass.
+    loop until the last fill do not fill any number in row, colum, and box
+    print filled location along the way.
