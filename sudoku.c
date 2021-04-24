@@ -1,5 +1,8 @@
 // Sudoku puzzle verifier and solver
 
+//compile: gcc sudoku.c -pthread -lm
+//run: ./a.out puzzle9-valid.txt
+//You can also use ./runit.sh to compile and run all test case.
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
@@ -264,7 +267,7 @@ void fillPuzzle(int psize, int **grid) {
   pthread_attr_t attr;
   pthread_attr_init(&attr);
 
-  int arrSize = 100;
+  int arrSize = psize * 3;
   pthread_t tids[arrSize];
   int tidCount = 0;
 
@@ -450,6 +453,7 @@ int main(int argc, char **argv) {
   bool valid = false;
   bool complete = false;
   checkPuzzle(sudokuSize, grid, &valid, &complete);
+  printf("%s\n",argv[1]);
   printf("Complete puzzle? ");
   printf(complete ? "true\n" : "false\n");
   if (complete) {

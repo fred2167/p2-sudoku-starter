@@ -12,3 +12,14 @@ fillPuzzle:
     threads are joined after each pass.
     loop until the last fill do not fill any number in row, colum, and box
     print filled location along the way.
+
+
+Can verify whether it is valid or not - 10/10
+Starts/joins multiple threads to speedup operation - 5/5
+For NxN complete puzzle, can verify whether it is valid or not - 5/5
+The number of threads is proportional to N - 5/5
+Bonus: Can complete puzzles - 2/2
+Bonus: Can complete difficult puzzles - 0/3
+Total: 27
+
+Use ./runit.sh can ran all test case at onece
