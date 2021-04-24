@@ -2,7 +2,10 @@
 
 //compile: gcc sudoku.c -pthread -lm
 //run: ./a.out puzzle9-valid.txt
-//You can also use ./runit.sh to compile and run all test case.
+//run: ./a.out puzzle2-valid.txt
+//run: ./a.out puzzle2-invalid.txt
+//run: ./a.out puzzle2-fill-valid.txt
+
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>

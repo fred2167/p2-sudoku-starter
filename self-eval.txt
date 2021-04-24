@@ -21,5 +21,3 @@ The number of threads is proportional to N - 5/5
 Bonus: Can complete puzzles - 2/2
 Bonus: Can complete difficult puzzles - 0/3
 Total: 27
-
-Use ./runit.sh can ran all test case at onece
