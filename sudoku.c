@@ -126,9 +126,11 @@ void *fillBox(void *param) {
 
   // counter arrays for each number, also ignore idx 0 for convenience
   int counter[size + 1];
-  for (int i = 1; i <= size; i++) {
-    counter[i] = 0;
-  }
+  memset(counter, 0, size+1);
+  // for (int i = 1; i <= size; i++) {
+  //   counter[i] = 0;
+  // }
+  
 
   int interval = (int)sqrt(size);
   for (int r = row; r < row + interval; r++) {
